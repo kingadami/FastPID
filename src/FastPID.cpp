@@ -1,7 +1,5 @@
 #include "FastPID.h"
 
-#include <Arduino.h>
-
 FastPID::~FastPID() {
 }
 
