@@ -45,8 +45,8 @@ bool FastPID::setOutputRange(int16_t min, int16_t max)
     setCfgErr();
     return ! _cfg_err;
   }
-  _outmin = int64_t(min) * PARAM_MULT;
-  _outmax = int64_t(max) * PARAM_MULT;
+  _outmin = static_cast<int64_t>(min) * PARAM_MULT;
+  _outmax = static_cast<int64_t>(max) * PARAM_MULT;
   return ! _cfg_err;
 }
 
@@ -77,18 +77,18 @@ uint32_t FastPID::floatToParam(float in) {
 int16_t FastPID::step(int16_t sp, int16_t fb) {
 
   // int16 + int16 = int17
-  int32_t err = int32_t(sp) - int32_t(fb);
+  int32_t err = static_cast<int32_t>(sp) - static_cast<int32_t>(fb);
   int32_t P = 0, I = 0;
   int32_t D = 0;
 
   if (_p) {
     // uint16 * int16 = int32
-    P = int32_t(_p) * int32_t(err);
+    P = static_cast<int32_t>(_p) * static_cast<int32_t>(err);
   }
 
   if (_i) {
     // int17 * int16 = int33
-    _sum += int64_t(err) * int64_t(_i);
+    _sum += static_cast<int64_t>(err) * static_cast<int64_t>(_i);
 
     // Limit sum to 32-bit signed value so that it saturates, never overflows.
     if (_sum > INTEG_MAX)
@@ -102,7 +102,7 @@ int16_t FastPID::step(int16_t sp, int16_t fb) {
 
   if (_d) {
     // (int17 - int16) - (int16 - int16) = int19
-    int32_t deriv = (err - _last_err) - int32_t(sp - _last_sp);
+    int32_t deriv = (err - _last_err) - static_cast<int32_t>(sp - _last_sp);
     _last_sp = sp; 
     _last_err = err; 
 
@@ -113,11 +113,11 @@ int16_t FastPID::step(int16_t sp, int16_t fb) {
       deriv = DERIV_MIN;
 
     // int16 * int16 = int32
-    D = int32_t(_d) * int32_t(deriv);
+    D = static_cast<int32_t>(_d) * static_cast<int32_t>(deriv);
   }
 
   // int32 (P) + int32 (I) + int32 (D) = int34
-  int64_t out = int64_t(P) + int64_t(I) + int64_t(D);
+  int64_t out = static_cast<int64_t>(P) + static_cast<int64_t>(I) + static_cast<int64_t>(D);
 
   // Make the output saturate
   if (out > _outmax) 
