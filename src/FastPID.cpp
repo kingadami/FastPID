@@ -10,47 +10,50 @@ void FastPID::clear() {
   _last_err = 0;
 }
 
-bool FastPID::setCoefficients(float kp, float ki, float kd, float hz) {
+bool FastPID::setCoefficients(const float kp, const float ki, const float kd, const float hz) {
   _p = floatToParam(kp);
   _i = floatToParam(ki / hz);
   _d = floatToParam(kd * hz);
   return ! _cfg_err;
 }
 
-bool FastPID::setOutputConfig(int bits, bool sign) {
+bool FastPID::setOutputConfig(const int bits, const bool sign) {
   // Set output bits
   if (bits > 16 || bits < 1) {
     setCfgErr();
+    return ! _cfg_err;
+  }
+
+  if (bits == 16) {
+    _outmax = (0xFFFFULL >> (17 - bits)) * PARAM_MULT;
+  }
+  else{
+    _outmax = (0xFFFFULL >> (16 - bits)) * PARAM_MULT;
+  }
+  if (sign) {
+    _outmin = -((0xFFFFULL >> (17 - bits)) + 1) * PARAM_MULT;
   }
   else {
-    if (bits == 16) {
-      _outmax = (0xFFFFULL >> (17 - bits)) * PARAM_MULT;
-    }
-    else{
-      _outmax = (0xFFFFULL >> (16 - bits)) * PARAM_MULT;
-    }
-    if (sign) {
-      _outmin = -((0xFFFFULL >> (17 - bits)) + 1) * PARAM_MULT;
-    }
-    else {
-      _outmin = 0;
-    }
+    _outmin = 0;
   }
-  return ! _cfg_err;
+
+	//If we made it this far we are good
+  return true;
 }
 
-bool FastPID::setOutputRange(int16_t min, int16_t max)
+bool FastPID::setOutputRange(const int16_t min, const int16_t max)
 {
   if (min >= max) {
     setCfgErr();
     return ! _cfg_err;
   }
+
   _outmin = static_cast<int64_t>(min) * PARAM_MULT;
   _outmax = static_cast<int64_t>(max) * PARAM_MULT;
-  return ! _cfg_err;
+  return true;
 }
 
-bool FastPID::configure(float kp, float ki, float kd, float hz, int bits, bool sign) {
+bool FastPID::configure(const float kp, const float ki, const float kd, const float hz, const int bits, const bool sign) {
   clear();
   _cfg_err = false;
   setCoefficients(kp, ki, kd, hz);
@@ -58,13 +61,13 @@ bool FastPID::configure(float kp, float ki, float kd, float hz, int bits, bool s
   return ! _cfg_err; 
 }
 
-uint32_t FastPID::floatToParam(float in) {
+uint32_t FastPID::floatToParam(const float in) {
   if (in > PARAM_MAX || in < 0) {
     _cfg_err = true;
     return 0;
   }
 
-  uint32_t param = in * PARAM_MULT;
+  uint32_t param = static_cast<uint32_t>(in * PARAM_MULT);
 
   if (in != 0 && param == 0) {
     _cfg_err = true;
@@ -74,7 +77,7 @@ uint32_t FastPID::floatToParam(float in) {
   return param;
 }
 
-int16_t FastPID::step(int16_t sp, int16_t fb) {
+int16_t FastPID::step(const int16_t sp, const int16_t fb) {
 
   // int16 + int16 = int17
   int32_t err = static_cast<int32_t>(sp) - static_cast<int32_t>(fb);
